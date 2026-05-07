@@ -1157,10 +1157,11 @@
           </select>
         </div>
 
-        <div class="field">
-          <label>Referral Code</label>
-          <input type="text" name="Referral Code" placeholder="If applicable">
-          <div class="hint">Leave blank if none</div>
+        <div class="field" id="referralCodeField">
+          <label id="referralCodeLabel">Referral Code</label>
+          <input type="text" name="Referral Code" id="referralCodeInput" placeholder="If applicable">
+          <div class="hint" id="referralCodeHint">Leave blank if none</div>
+          <div class="field-error" id="referralCodeError">Referral Code is required for Amity process</div>
         </div>
 
 
@@ -1632,6 +1633,33 @@ form.querySelectorAll("input, select, textarea").forEach(field => {
     if (field.classList.contains("invalid")) validateField(field);
   });
 });
+
+// ── Referral Code: mandatory for Amity process only ──
+const universitySelect   = form.querySelector('select[name="University Name"]');
+const referralInput      = document.getElementById("referralCodeInput");
+const referralLabel      = document.getElementById("referralCodeLabel");
+const referralHint       = document.getElementById("referralCodeHint");
+const referralError      = document.getElementById("referralCodeError");
+
+function updateReferralRequirement() {
+  const isAmity = universitySelect.value.trim().toLowerCase() === "amity";
+  if (isAmity) {
+    referralInput.setAttribute("required", "required");
+    referralLabel.innerHTML = 'Referral Code <span class="req">*</span>';
+    referralInput.placeholder = "Enter referral code (required)";
+    referralHint.style.display = "none";
+  } else {
+    referralInput.removeAttribute("required");
+    referralInput.classList.remove("invalid");
+    referralError.classList.remove("show");
+    referralLabel.innerHTML = "Referral Code";
+    referralInput.placeholder = "If applicable";
+    referralHint.style.display = "";
+  }
+}
+
+universitySelect.addEventListener("change", updateReferralRequirement);
+updateReferralRequirement(); // run on page load
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
