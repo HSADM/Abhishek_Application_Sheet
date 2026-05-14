@@ -1193,10 +1193,10 @@
         <!-- ═══ Section 2: Application Details ═══ -->
         <div class="section-title">Application Details</div>
 
-        <div class="field">
-          <label>Application Number <span class="req">*</span></label>
-          <input type="text" name="Application Number" placeholder="e.g. AU/UG/26/12149" required>
-          <div class="field-error">Application number is required</div>
+        <div class="field" id="appNumberField">
+          <label id="appNumberLabel">Application Number <span class="req">*</span></label>
+          <input type="text" name="Application Number" id="appNumberInput" placeholder="e.g. AU/UG/26/12149" required>
+          <div class="field-error" id="appNumberError">Application number is required</div>
         </div>
 
         <div class="field">
@@ -2255,15 +2255,41 @@ form.querySelectorAll("input, select, textarea").forEach(field => {
   });
 });
 
-// ── Referral Code: mandatory for Amity university only ──────────────────────
+// ── Amity-specific rules: 8-digit App Number + mandatory Referral Code ────────
 const _uniSelect      = document.getElementById("mainUniversitySelect");
 const _referralInput  = document.getElementById("referralCodeInput");
 const _referralLabel  = document.getElementById("referralCodeLabel");
 const _referralHint   = document.getElementById("referralCodeHint");
 const _referralError  = document.getElementById("referralCodeError");
+const _appNumInput    = document.getElementById("appNumberInput");
+const _appNumLabel    = document.getElementById("appNumberLabel");
+const _appNumError    = document.getElementById("appNumberError");
 
-function updateReferralRequirement() {
+function updateAmityRules() {
   const isAmity = _uniSelect && _uniSelect.value.trim().toLowerCase() === "amity";
+
+  // ── Application Number ──
+  if (isAmity) {
+    _appNumInput.setAttribute("required", "required");
+    _appNumInput.setAttribute("pattern", "\\d{8}");
+    _appNumInput.setAttribute("maxlength", "8");
+    _appNumInput.setAttribute("inputmode", "numeric");
+    _appNumLabel.innerHTML = 'Application Number <span class="req">*</span>';
+    _appNumInput.placeholder = "Enter 8-digit application number";
+    _appNumError.textContent = "Enter a valid 8-digit application number for Amity";
+  } else {
+    _appNumInput.setAttribute("required", "required");
+    _appNumInput.removeAttribute("pattern");
+    _appNumInput.removeAttribute("maxlength");
+    _appNumInput.removeAttribute("inputmode");
+    _appNumLabel.innerHTML = 'Application Number <span class="req">*</span>';
+    _appNumInput.placeholder = "e.g. AU/UG/26/12149";
+    _appNumError.textContent = "Application number is required";
+    _appNumInput.classList.remove("invalid");
+    _appNumError.classList.remove("show");
+  }
+
+  // ── Referral Code ──
   if (isAmity) {
     _referralInput.setAttribute("required", "required");
     _referralLabel.innerHTML = 'Referral Code <span class="req">*</span>';
@@ -2279,9 +2305,22 @@ function updateReferralRequirement() {
   }
 }
 
+// Live 8-digit enforcement: block non-numeric input for Amity
+_appNumInput.addEventListener("input", () => {
+  if (_uniSelect && _uniSelect.value.trim().toLowerCase() === "amity") {
+    _appNumInput.value = _appNumInput.value.replace(/\D/g, "").slice(0, 8);
+  }
+});
+
 if (_uniSelect) {
-  _uniSelect.addEventListener("change", updateReferralRequirement);
-  updateReferralRequirement(); // run on page load
+  _uniSelect.addEventListener("change", () => {
+    // Clear app number when switching university to avoid stale invalid values
+    _appNumInput.value = "";
+    _appNumInput.classList.remove("invalid");
+    _appNumError.classList.remove("show");
+    updateAmityRules();
+  });
+  updateAmityRules(); // run on page load
 }
 
 form.addEventListener("submit", async (e) => {
